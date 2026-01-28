@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mail;
@@ -18,12 +19,38 @@ namespace KRI77_Helper.Utils
         {
             try
             {
+                var configuration = new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .Build();
+
+                string? emailTo = configuration["FileSettings:EmailTo"];
+                string? emailCc = configuration["FileSettings:EmailCc"];
+
                 using var message = new MailMessage();
                 message.From = new MailAddress("AI_COE_Automation@manulife.com", "AI-COE Automation");
-                message.To.Add(new MailAddress("AI_COE@manulife.com", "AI COE"));
-                message.CC.Add(new MailAddress("Adrian_Cadag@manulife.com"));
-                //message.CC.Add(new MailAddress("AI_COE@manulife.com"));
-                //message.CC.Add(new MailAddress("RANDY_II_MACAPIL@manulife.com"));
+                
+                if (!string.IsNullOrEmpty(emailTo))
+                {
+                    foreach (string email in emailTo.Split(";"))
+                    {
+                        message.To.Add(new MailAddress(email));
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(emailCc))
+                {
+                    foreach (string email in emailCc.Split(";"))
+                    {
+                        message.CC.Add(new MailAddress(email));
+                    }
+                }
+
+                if (message.To.Count() == 0 && message.CC.Count() == 0)
+                {
+                    Console.WriteLine("No email recipients specified. Email not sent.");
+                    return 0;
+                }
 
                 if (!isError)
                 {
