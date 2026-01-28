@@ -6,6 +6,7 @@ using KRI77_Helper.Models;
 using KRI77_Helper.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -17,6 +18,10 @@ namespace KRI77_Helper
 {
     internal class Process
     {
+
+        // Instance-level "global" variable
+        private readonly Stopwatch _stopwatch = new Stopwatch();
+
         public Process() { }
 
         /* Returns the output file name created */
@@ -50,11 +55,18 @@ namespace KRI77_Helper
         /* Processing for Tanium Servers */
         public void ProcessTaniumServers(string in_path, string in_file, string out_path, string out_file, string archive_path)
         {
-            // Archive source file before processing
-            string archive_file = CopyToArchive(in_path, archive_path, in_file);
-            
+            _stopwatch.Restart();
+
             //Console.WriteLine($"Processing file: {in_file}");
             Console.WriteLine($"Processing file: {in_file}");
+
+            if(!in_file.ToLower().EndsWith(".csv"))
+            {
+                throw new InvalidOperationException("Invalid file type. Expected CSV (.csv)");
+            }
+
+            // Archive source file before processing
+            string archive_file = CopyToArchive(in_path, archive_path, in_file);
 
             int in_count = 0;
             int out_count = 0;
@@ -194,14 +206,20 @@ namespace KRI77_Helper
                 }
             }
 
+            _stopwatch.Stop();
+            //Console.WriteLine($"DoWork runtime: {_stopwatch.Elapsed}");
+            string elapsedCustom = _stopwatch.Elapsed.ToString(@"hh\:mm\:ss\.fff");
+
             Console.WriteLine($"Row count {in_file} : {in_count.ToString()}");
             Console.WriteLine($"Output row count {out_file} : {out_count.ToString()}");
             Console.WriteLine($"Duplicates Removed : {(in_count - out_count).ToString()}");
+            Console.WriteLine($"Process Runtime: {_stopwatch.Elapsed}");
             Console.WriteLine($"\nOutput file : {out_path}{out_file}\n");
             Console.WriteLine($"Successfully processed file: {in_file}\n" +
                 $"**************************\n\n");
 
-            EmailUtils.SendEmail("Servers", in_count, (in_count - out_count), false);
+
+            EmailUtils.SendEmail("Servers", in_count, (in_count - out_count), elapsedCustom, false);
             CsvLogger.Log(in_file, out_file, archive_file, in_count, (in_count - out_count));
 
             //CsvLogger.Log($"Row count {in_file} : {in_count.ToString()}");
@@ -215,11 +233,19 @@ namespace KRI77_Helper
         /* Processing for Tanium End User Devices */
         public void ProcessTaniumEUD(string in_path, string in_file, string out_path, string out_file, string archive_path)
         {
-            // Archive source file before processing
-            string archive_file = CopyToArchive(in_path, archive_path, in_file);
+            _stopwatch.Restart();
+            
 
             //Console.WriteLine($"Processing file: {in_file}");
             Console.WriteLine($"Processing file: {in_file}");
+
+            if (!in_file.ToLower().EndsWith(".csv"))
+            {
+                throw new InvalidOperationException("Invalid file type. Expected CSV (.csv)");
+            }
+
+            // Archive source file before processing
+            string archive_file = CopyToArchive(in_path, archive_path, in_file);
 
             int in_count = 0;
             int out_count = 0;
@@ -366,14 +392,21 @@ namespace KRI77_Helper
                 workbook.SaveAs(Path.Combine(out_path, out_file));
             }
 
+            _stopwatch.Stop();
+            //Console.WriteLine($"DoWork runtime: {_stopwatch.Elapsed}");
+            string elapsedCustom = _stopwatch.Elapsed.ToString(@"hh\:mm\:ss\.fff");
+
             Console.WriteLine($"Row count {in_file} : {in_count.ToString()}");
             Console.WriteLine($"Output row count {out_file} : {out_count.ToString()}");
             Console.WriteLine($"Duplicates Removed : {(in_count - out_count).ToString()}");
+            Console.WriteLine($"Process Runtime: {_stopwatch.Elapsed}");
             Console.WriteLine($"\nOutput file : {out_path}{out_file}\n");
             Console.WriteLine($"Successfully processed file: {in_file}\n" +
                 $"**************************\n\n");
 
-            EmailUtils.SendEmail("End User Devices", in_count, (in_count - out_count), false);
+            
+
+            EmailUtils.SendEmail("End User Devices", in_count, (in_count - out_count), elapsedCustom, false);
             CsvLogger.Log(in_file, out_file, archive_file, in_count, (in_count - out_count));
 
             //CsvLogger.Log($"Row count {in_file} : {in_count.ToString()}");
@@ -387,11 +420,19 @@ namespace KRI77_Helper
         /* Processing for IntuneReport - Mobile Devices */
         public void ProcessIntuneReport(string in_path, string in_file, string out_path, string out_file, string archive_path)
         {
-            // Archive source file before processing
-            string archive_file = CopyToArchive(in_path, archive_path, in_file);
+            _stopwatch.Restart();
+            
 
             //Console.WriteLine($"Processing file: {in_file}");
             Console.WriteLine($"Processing file: {in_file}");
+
+            if (!in_file.ToLower().EndsWith(".csv"))
+            {
+                throw new InvalidOperationException("Invalid file type. Expected CSV (.csv)");
+            }
+
+            // Archive source file before processing
+            string archive_file = CopyToArchive(in_path, archive_path, in_file);
 
             int in_count = 0;
             int out_count = 0;
@@ -681,14 +722,19 @@ namespace KRI77_Helper
                 workbook.SaveAs(Path.Combine(out_path, out_file));
             }
 
+            _stopwatch.Stop();
+            //Console.WriteLine($"DoWork runtime: {_stopwatch.Elapsed}");
+            string elapsedCustom = _stopwatch.Elapsed.ToString(@"hh\:mm\:ss\.fff");
+
             Console.WriteLine($"Row count {in_file} : {in_count.ToString()}");
             Console.WriteLine($"Output row count {out_file} : {out_count.ToString()}");
             Console.WriteLine($"Duplicates Removed : {(in_count - out_count).ToString()}");
+            Console.WriteLine($"Process Runtime: {_stopwatch.Elapsed}");
             Console.WriteLine($"\nOutput file : {out_path}{out_file}\n");
             Console.WriteLine($"Successfully processed file: {in_file}\n" +
                 $"**************************\n\n");
 
-            EmailUtils.SendEmail("Intune Report", in_count, (in_count - out_count), false);
+            EmailUtils.SendEmail("Intune Report", in_count, (in_count - out_count), elapsedCustom, false);
             CsvLogger.Log(in_file, out_file, archive_file, in_count, (in_count - out_count));
 
             //CsvLogger.Log($"Row count {in_file} : {in_count.ToString()}");
@@ -702,6 +748,7 @@ namespace KRI77_Helper
         /* Process Terminals */
         public void ProcessTerminals(string in_path, string in_file, string out_path, string out_file, string archive_path)
         {
+            _stopwatch.Restart();
             // Archive source file before processing
             string archive_file = CopyToArchive(in_path, archive_path, in_file);
 
@@ -816,14 +863,20 @@ namespace KRI77_Helper
                 workbook.SaveAs(Path.Combine(out_path, out_file));
             }
 
+            _stopwatch.Stop();
+            string elapsedCustom = _stopwatch.Elapsed.ToString(@"hh\:mm\:ss\.fff");
+
             Console.WriteLine($"Row count {in_file} : {in_count.ToString()}");
             Console.WriteLine($"Output row count {out_file} : {out_count.ToString()}");
             Console.WriteLine($"Duplicates Removed : {(in_count - out_count).ToString()}");
+            Console.WriteLine($"Process Runtime: {_stopwatch.Elapsed}");
             Console.WriteLine($"\nOutput file : {out_path}{out_file}\n");
             Console.WriteLine($"Successfully processed file: {in_file}\n" +
                 $"**************************\n\n");
 
-            EmailUtils.SendEmail(in_file, in_count, (in_count - out_count), false);
+            
+
+            EmailUtils.SendEmail(in_file, in_count, (in_count - out_count), elapsedCustom, false);
             CsvLogger.Log(in_file, out_file, archive_file, in_count, (in_count - out_count));
 
             //CsvLogger.Log($"Row count {in_file} : {in_count.ToString()}");
@@ -841,6 +894,18 @@ namespace KRI77_Helper
             string out_path, string
             out_file, string archive_path)
         {
+            _stopwatch.Restart();
+
+            if (!in_file_network_asia.ToLower().EndsWith(".csv"))
+            {
+                throw new InvalidOperationException("Invalid file type. Expected CSV (.csv)");
+            }
+
+            if (!in_file_network_na.ToLower().EndsWith(".xlsx"))
+            {
+                throw new InvalidOperationException("Invalid file type. Expected Excel File (.xlsx)");
+            }
+
             int in_count_na = 0;
             int in_count_asia = 0;
             int out_count = 0;
@@ -1039,15 +1104,19 @@ namespace KRI77_Helper
                 workbook.SaveAs(Path.Combine(out_path, out_file));
             }
 
+            _stopwatch.Stop();
+            string elapsedCustom = _stopwatch.Elapsed.ToString(@"hh\:mm\:ss\.fff");
+
             Console.WriteLine($"Row count {in_file_network_na} : {in_count_na.ToString()}");
             Console.WriteLine($"Row count {in_file_network_asia} : {in_count_asia.ToString()}");
             Console.WriteLine($"Output row count {out_file} : {out_count.ToString()}");
             Console.WriteLine($"Duplicates Removed : {((in_count_na + in_count_asia) - out_count).ToString()}");
+            Console.WriteLine($"Process Runtime: {_stopwatch.Elapsed}");
             Console.WriteLine($"\nOutput file : {out_path}{out_file}\n");
             Console.WriteLine($"Successfully processed file/s: {in_file_network_na} and {in_file_network_asia}\n" +
                 $"**************************\n\n");
 
-            EmailUtils.SendEmail("Network Devices", (in_count_na + in_count_asia), ((in_count_na + in_count_asia) - out_count), false);
+            EmailUtils.SendEmail("Network Devices", (in_count_na + in_count_asia), ((in_count_na + in_count_asia) - out_count), elapsedCustom, false);
             CsvLogger.Log(in_file_network_na, out_file, archive_file_na, in_count_na, (in_count_na - distinctNetworksNA.Count()));
             CsvLogger.Log(in_file_network_asia, out_file, archive_file_asia, in_count_asia, (in_count_asia - distinctNetworksAsia.Count()));
 

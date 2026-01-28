@@ -1,4 +1,5 @@
 ﻿using KRI77_Helper;
+using KRI77_Helper.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 using System.Buffers;
@@ -70,7 +71,10 @@ bool is_network_processed = false;
 
 string file_printer_na = String.Empty;
 string file_printer_asia = String.Empty;
+
 bool is_printer_processed = false;
+bool is_processed = false;
+
 
 Console.WriteLine("Process started. (DO NOT CLOSE!!!)");
 //CsvLogger.Log("Start KRI77 Helper", level: "START");
@@ -84,47 +88,84 @@ if (matchingFiles.Count() == 0)
 foreach (string file in matchingFiles)
 {
     string in_file = Path.GetFileName(file);
-    /* Servers - TaniumServers */
-    if (in_file.StartsWith(in_servers) && !String.IsNullOrEmpty(in_servers) && in_file.ToLower().EndsWith(".csv"))
-        process.ProcessTaniumServers(in_path, in_file, out_path, out_servers, archive_path);
-
-    /* End User Devices - TaniumEUD */
-    else if (in_file.StartsWith(in_eud) && !String.IsNullOrEmpty(out_eud) && in_file.ToLower().EndsWith(".csv"))
-        process.ProcessTaniumEUD(in_path, in_file, out_path, out_eud, archive_path);
-
-    /* Mobile devices - IntuneReport */
-    else if (in_file.StartsWith(in_intune) && !String.IsNullOrEmpty(out_intune) && in_file.ToLower().EndsWith(".csv"))
-        process.ProcessIntuneReport(in_path, in_file, out_path, out_intune, archive_path);
-
-    /* Terminals */
-    //else if (in_file.StartsWith(in_terminals) && !String.IsNullOrEmpty(out_terminals) && in_file.ToLower().EndsWith(".xlsx"))
-    //    process.ProcessTerminals(in_path, in_file, out_path, out_terminals, archive_path);
-
-    /* Network Devices - Process only if both NA and Asia files are present */
-    else if (in_file.Contains(in_network_na) && !String.IsNullOrEmpty(out_network) && in_file.ToLower().EndsWith(".xlsx"))
-        file_network_na = in_file;
-
-    else if (in_file.Contains(in_network_asia) && !String.IsNullOrEmpty(out_network) && in_file.ToLower().EndsWith(".csv"))
-        file_network_asia = in_file;
-
-    /* Printers */
-    //else if (in_file.StartsWith(in_printer_na) && !String.IsNullOrEmpty(out_printer) && in_file.ToLower().EndsWith(".xlsx"))
-    //    file_printer_na = in_file;
-
-    /* Process Network Devices if both files are found */
-    if (!String.IsNullOrEmpty(file_network_na) && !String.IsNullOrEmpty(file_network_asia) && is_network_processed == false)
+    try
     {
-        process.ProcessNetworkDevices(in_path, file_network_na, file_network_asia, out_path, out_network, archive_path);
-        is_network_processed = true;
-    }
+        /* Servers - TaniumServers */
+        if (in_file.StartsWith(in_servers) && !String.IsNullOrEmpty(in_servers))
+        {
+            process.ProcessTaniumServers(in_path, in_file, out_path, out_servers, archive_path);
+            is_processed = true;
+        }
 
-    /* Process Printer Devices if both files are found */
-    //if (!String.IsNullOrEmpty(file_network_na) && !String.IsNullOrEmpty(file_network_asia) && is_network_processed == false)
-    //if (!String.IsNullOrEmpty(file_printer_na) && is_printer_processed == false)
-    //{
-    //    process.ProcessPrinters(archive_path, in_path, file_printer_na, "", out_path, out_printer);
-    //    is_printer_processed = true;
-    //}
+        /* End User Devices - TaniumEUD */
+        else if (in_file.StartsWith(in_eud) && !String.IsNullOrEmpty(out_eud))
+        {
+            process.ProcessTaniumEUD(in_path, in_file, out_path, out_eud, archive_path);
+            is_processed = true;
+        }
+
+        /* Mobile devices - IntuneReport */
+        else if (in_file.StartsWith(in_intune) && !String.IsNullOrEmpty(out_intune))
+        {
+            process.ProcessIntuneReport(in_path, in_file, out_path, out_intune, archive_path);
+            is_processed = true;
+        }
+
+        /* Terminals */
+        //else if (in_file.StartsWith(in_terminals) && !String.IsNullOrEmpty(out_terminals) && in_file.ToLower().EndsWith(".xlsx"))
+        //    process.ProcessTerminals(in_path, in_file, out_path, out_terminals, archive_path);
+
+        /* Network Devices - Process only if both NA and Asia files are present */
+        else if (in_file.Contains(in_network_na) && !String.IsNullOrEmpty(out_network))
+        {
+            file_network_na = in_file;
+            is_processed = true;
+        }
+
+        else if (in_file.Contains(in_network_asia) && !String.IsNullOrEmpty(out_network))
+        {
+            file_network_asia = in_file;
+            is_processed = true;
+        }
+
+        /* Printers */
+        //else if (in_file.StartsWith(in_printer_na) && !String.IsNullOrEmpty(out_printer) && in_file.ToLower().EndsWith(".xlsx"))
+        //    file_printer_na = in_file;
+
+        /* Process Network Devices if both files are found */
+        if (!String.IsNullOrEmpty(file_network_na) && !String.IsNullOrEmpty(file_network_asia) && is_network_processed == false)
+        {
+            //in_file = file_network_na + ", " + file_network_asia;
+            process.ProcessNetworkDevices(in_path, file_network_na, file_network_asia, out_path, out_network, archive_path);
+            is_network_processed = true;
+            
+        }
+
+        /* Process Printer Devices if both files are found */
+        //if (!String.IsNullOrEmpty(file_network_na) && !String.IsNullOrEmpty(file_network_asia) && is_network_processed == false)
+        //if (!String.IsNullOrEmpty(file_printer_na) && is_printer_processed == false)
+        //{
+        //    process.ProcessPrinters(archive_path, in_path, file_printer_na, "", out_path, out_printer);
+        //    is_printer_processed = true;
+        //}
+
+        if (!is_processed) {
+            throw new InvalidOperationException($"Invalid Filename - {in_file}");
+        }
+
+        is_processed = false;
+    }
+    catch (Exception ex)
+    {
+        EmailUtils.SendErrorEmail(in_file, ex.Message, true);
+        //Console.Error.WriteLine($"Error: {ex.Message}");
+    }
+}
+
+if ((!String.IsNullOrEmpty(file_network_na) && String.IsNullOrEmpty(file_network_asia)) || (String.IsNullOrEmpty(file_network_na) && !String.IsNullOrEmpty(file_network_asia)))
+{
+    //Console.Error.WriteLine($"Error: Missing Network File");
+    EmailUtils.SendErrorEmail("Network Devices", "Missing Network File", true);
 }
 
 /* Cleanup all files after processing */
