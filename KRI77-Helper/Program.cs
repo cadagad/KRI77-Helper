@@ -37,6 +37,8 @@ string in_printer_na = configuration["FileSettings:In_Printer_NA"] ?? "";
 string in_printer_asia = configuration["FileSettings:In_Network_Asia"] ?? "";
 string out_printer = configuration["FileSettings:Out_Printer_ALL"] ?? "";
 
+List<string> doNotDelete = new List<string>();
+
 
 if (String.IsNullOrEmpty(in_path) || String.IsNullOrEmpty(out_path))
 {
@@ -91,6 +93,7 @@ foreach (string file in matchingFiles)
     try
     {
         /* Servers - TaniumServers */
+        Console.WriteLine($"Working on {in_file}");
         if (in_file.StartsWith(in_servers) && !String.IsNullOrEmpty(in_servers))
         {
             process.ProcessTaniumServers(in_path, in_file, out_path, out_servers, archive_path);
@@ -116,13 +119,13 @@ foreach (string file in matchingFiles)
         //    process.ProcessTerminals(in_path, in_file, out_path, out_terminals, archive_path);
 
         /* Network Devices - Process only if both NA and Asia files are present */
-        else if (in_file.Contains(in_network_na) && !String.IsNullOrEmpty(out_network))
+        else if (in_file.Contains(in_network_na) && !String.IsNullOrEmpty(out_network) && in_file.EndsWith("xlsx"))
         {
             file_network_na = in_file;
             is_processed = true;
         }
 
-        else if (in_file.Contains(in_network_asia) && !String.IsNullOrEmpty(out_network))
+        else if (in_file.Contains(in_network_asia) && !String.IsNullOrEmpty(out_network) && in_file.EndsWith("csv"))
         {
             file_network_asia = in_file;
             is_processed = true;
@@ -152,13 +155,22 @@ foreach (string file in matchingFiles)
         if (!is_processed) {
             throw new InvalidOperationException($"Invalid Filename - {in_file}");
         }
-
-        is_processed = false;
+        
     }
     catch (Exception ex)
     {
         EmailUtils.SendErrorEmail(in_file, ex.Message, true);
+
+        if (!ex.Message.Contains("Invalid Filename") && !ex.Message.Contains("Invalid file type"))
+        {
+            doNotDelete.Add(Path.GetFileName(in_file));
+        }
+
         //Console.Error.WriteLine($"Error: {ex.Message}");
+    }
+    finally
+    {
+        is_processed = false;
     }
 }
 
@@ -172,6 +184,23 @@ if ((!String.IsNullOrEmpty(file_network_na) && String.IsNullOrEmpty(file_network
 Console.WriteLine("\nCleaning up input directory...");
 foreach (string file in matchingFiles)
 {
+    string in_file = Path.GetFileName(file);
+    if (in_file.Contains(in_network_na) && in_file.EndsWith("xlsx") && is_network_processed == false)
+    {
+        continue;
+    }
+
+    if (in_file.Contains(in_network_asia) && in_file.EndsWith("csv") && is_network_processed == false)
+    {
+        continue;
+    }
+
+    if (doNotDelete.Contains(in_file))
+    {
+        Console.WriteLine($"Skipping deletion of file due to processing error: {file}");
+        continue;
+    }
+
     /* Delete file */
     Console.WriteLine($"Deleting file: {file}");
     System.IO.File.Delete(file);
